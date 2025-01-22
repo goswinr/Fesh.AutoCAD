@@ -1,8 +1,10 @@
 ﻿namespace Fesh.AutoCAD
 
-open Autodesk.AutoCAD.UI
-open Autodesk.AutoCAD.DB
-open Autodesk.AutoCAD.Attributes
+open Autodesk.AutoCAD
+open Autodesk.AutoCAD.ApplicationServices
+open Autodesk.AutoCAD.DatabaseServices
+open Autodesk.AutoCAD.Geometry
+open Autodesk.AutoCAD.EditorInput
 open System
 open System.IO
 open System.Windows
@@ -22,30 +24,31 @@ module AppName =
 
 module DefaultCode =
     let get(appName:string) =
-        $"""#r "C:/Program Files/Autodesk/{appName}/AutoCadAPI.dll"
-#r "C:/Program Files/Autodesk/{appName}/AutoCadAPIUI.dll"
-#r "Fesh.AutoCAD"
+        $"""#I "C:/Program Files/Autodesk/{appName}"
+#r "AcDbMgd.dll"
+//#r "acdbmgdbrep.dll"
+#r "AcCui.dll"
+#r "AcDx.dll"
+#r "AcMgd.dll"
+#r "AcMr.dll"
+#r "AcSeamless.dll"
+#r "AcTcMgd.dll"
+#r "AcWindows.dll"
+#r "AdUIMgd.dll"
+#r "AdUiPalettes.dll"
+#r "AdWindows.dll"
+#r "AcCoreMgd.dll"
+
 open Autodesk.AutoCAD
-open Autodesk.AutoCAD.DB
-open Autodesk.AutoCAD.UI
-
-// Run your AutoCAD code inside a transaction:
-Fesh.AutoCAD.ScriptingSyntax.runApp (fun (app:UIApplication)  ->
-    let doc = app.ActiveUIDocument.Document
-    // ...
-    // ...your code
-    // ...
-    printfn "Done"
-    )"""
 
 
-// example of mode-less dialog: https://github.com/pierpaolo-canini/Lame-Duck
+"""
 
 
 
 /// A static class to provide logging and  access to the Fesh Editor
 [<AbstractClass; Sealed>]
-type App private () =
+type DebugUtil private () =
 
     static let mutable logFileOnDesktopCount = ref 0
 
@@ -60,7 +63,7 @@ type App private () =
     /// file name includes datetime to be unique
     /// sprintf "%sFesh.AutoCAD.Log-%s.txt" filePrefix time
     static member logToFile filePrefix (content:string) =
-       let checkedPrefix = if isNull filePrefix then "NULLPREFIX" else filePrefix
+       let checkedPrefix = if isNull filePrefix then "NULL-PREFIX" else filePrefix
        let checkedContent = if String.IsNullOrWhiteSpace content then "content is String.IsNullOrWhiteSpace" else content
        let time = DateTime.UtcNow.ToString("yyyy-MM-dd_HH-mm-ss-fff") // ensure unique name
        let filename = sprintf "%sFesh.AutoCAD.Log-%s.txt" checkedPrefix time
@@ -74,36 +77,79 @@ type App private () =
 
     /// logs text to Fesh editor window in red
     /// if Fesh is null it writes a text file to desktop instead and shows a Task Dialog.
-    static member alert msg =
-       Printf.kprintf (fun s ->
-           match App.Fesh with
-           |Some fesh when fesh.Window.IsLoaded ->
-                try
-                    fesh.Log.PrintnColor 180 100 10 s
-                with e -> // in case the logging fails
-                    incr logFileOnDesktopCount
-                    let printE = sprintf "\r\nLog.PrintnColor error:\r\n%A" e
-                    App.logToFile "App.alertFailed-" (s+printE)
-                    TaskDialog.Show("Fesh AddIn App.alertFailed", s+printE) |> ignore
-
-           | _ when logFileOnDesktopCount.Value < 10 ->
+    static member alert (msg:string) =
+        match DebugUtil.Fesh with
+        |Some fesh when fesh.Window.IsLoaded ->
+            try
+                fesh.Log.PrintnColor 180 100 10 msg
+            with e -> // in case the logging fails
                 incr logFileOnDesktopCount
-                App.logToFile "App.alert-" s
-                TaskDialog.Show("Fesh AddIn App.alert", s) |> ignore
+                let errMsg = $"\r\nLog.PrintnColor error:\r\n{msg}\r\n{e}"
+                DebugUtil.logToFile "App.alertFailed-" errMsg
+                MessageBox.Show(errMsg,"Fesh AddIn App.alertFailed") |> ignore
 
-           | _ -> () // do nothing , we already have 10 log files on the desktop
-           ) msg
+        | _ when logFileOnDesktopCount.Value < 10 ->
+                    incr logFileOnDesktopCount
+                    DebugUtil.logToFile "App.alert-" msg
+                    MessageBox.Show(msg,"Fesh AddIn App.alert") |> ignore
+
+        | _ -> () // do nothing , there are already 10 log files on the desktop
 
 
     /// logs text to Fesh editor window in green
     /// does nothing if Fesh is null
     static member log msg =
        Printf.kprintf (fun s ->
-           match App.Fesh with
+           match DebugUtil.Fesh with
            |None -> ()
            |Some fesh ->  fesh.Log.PrintnColor 50 100 10 s
            ) msg
 
+
+
+type FeshAddin() =
+
+
+    // example of mode-less dialog: https://github.com/pierpaolo-canini/Lame-Duck
+
+
+    // Define the command method
+    [<Runtime.CommandMethod("fesh")>]
+    member this.LaunchFeshWindow() =
+        // Your logic to launch the Fesh window
+        let doc = Application.DocumentManager.MdiActiveDocument
+        let ed = doc.Editor
+        ed.WriteMessage("\nLaunching Fesh window...")
+
+        let winHandle = Diagnostics.Process.GetCurrentProcess().MainWindowHandle
+        let canRun = fun () -> true
+
+        let appName = "AutoCAD 20XX" //AppName.get(commandData.Application.Application.VersionNumber)
+        let logo = new Uri("pack://application:,,,/Fesh.AutoCAD;component/Media32/logo.ico")
+        let hostData = {
+            hostName = appName
+            mainWindowHandel = winHandle
+            fsiCanRun =  canRun
+            logo = Some logo
+            defaultCode = Some (DefaultCode.get(appName))
+            hostAssembly = Some (Reflection.Assembly.GetAssembly(typeof<FeshAddin>))
+            }
+
+        let feshApp = Fesh.App.createEditorForHosting(hostData)
+
+        feshApp.Window.Show()
+
+
+
+        // Add the code to launch the Fesh window here
+        // For example, you might call a method from your Fesh application to show the window
+        // FeshApp.ShowWindow()
+
+[<assembly: Runtime.CommandClass(typeof<FeshAddin>)>]
+do()
+
+(*
+from Fesh.Revit:
 
 [<Transaction(TransactionMode.Manual)>]
 type internal FsiRunEventHandler (fesh:Fesh, queue: ConcurrentQueue< UIApplication->unit >) =
@@ -292,26 +338,6 @@ type StartEditorCommand() = // don't rename ! string referenced in  OnStartup ->
                 |Some s ->
                     s
 
-                    (* //TODO Alt enter does not work !?!
-                    Fesh.Window.KeyDown.Add(fun e -> //to avoid pressing alt to focus on menu and the disabling Alt+Enter for Evaluating selection in FSI
-                        fesh.Log.PrintDebugMsg "key: %A, system key: %A, mod: %A " e.Key e.SystemKey Keyboard.Modifiers
-                        //if e.Key = Key.LeftAlt || e.Key = Key.RightAlt then
-                        //    e.Handled <- true
-                        //elif (Keyboard.Modifiers = ModifierKeys.Alt && e.Key = Key.Enter) ||
-                        //   (Keyboard.Modifiers = ModifierKeys.Alt && e.Key = Key.Return) then
-                        //        Fesh.Fsi.Evaluate{code = Fesh.Tabs.CurrAvaEdit.SelectedText ; file=Fesh.Tabs.Current.FilePath; allOfFile=false}
-                        //        e.Handled <- true
-                        )
-                    Fesh.Tabs.Control.PreviewKeyDown.Add (fun e ->
-                        if Keyboard.Modifiers = ModifierKeys.Alt && Keyboard.IsKeyDown(Key.Enter) then
-                            fesh.Log.PrintDebugMsg "Alt+Enter"
-                        elif Keyboard.Modifiers = ModifierKeys.Alt && Keyboard.IsKeyDown(Key.Return) then
-                            fesh.Log.PrintDebugMsg "Alt+Return"
-                        else
-                            fesh.Log.PrintDebugMsg "not Alt+Enter"
-                            )
-                    *)
-
             if not App.FeshWasEverShown then
                 fesh.Window.Show()
                 App.FeshWasEverShown <- true
@@ -329,17 +355,10 @@ type StartEditorCommand() = // don't rename ! string referenced in  OnStartup ->
         member this.Execute(commandData: ExternalCommandData, message: byref<string>, elements: ElementSet): Result =
             this.Execute(commandData, &message, elements)
 
+    *)
 
 
-
-   (* let uiApp =
-        let versionNumber = int uiConApp.ControlledApplication.VersionNumber
-        let fieldName = if versionNumber >= 2017 then  "m_uiapplication" else "m_application"
-        let fi = uiConApp.GetType().GetField(fieldName, BindingFlags.NonPublic ||| BindingFlags.Instance)
-        fi.GetValue(uiConApp) :?> UIApplication
-
-
-
+   (*
     let checkForNewRelease(fesh:Fesh) =
         async {
             try

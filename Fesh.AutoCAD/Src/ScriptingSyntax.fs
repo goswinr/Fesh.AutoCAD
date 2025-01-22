@@ -1,14 +1,18 @@
 ﻿namespace Fesh.AutoCAD
 
-open Autodesk.AutoCAD.UI
-open Autodesk.AutoCAD.DB
-open Autodesk.AutoCAD.Attributes
+
+
+// open Autodesk.AutoCAD.UI
+// open Autodesk.AutoCAD.DB
+// open Autodesk.AutoCAD.Attributes
 open System
 open Fesh
 
 
 module ScriptingSyntax =
 
+    ()
+    (*
     /// Runs a function in a transaction
     /// Will log errors to Fesh Log if transaction has problems
     let run (f: Document-> unit)  =
@@ -50,7 +54,7 @@ module ScriptingSyntax =
 
     /// Runs a function in a transaction
     /// Will log errors to Fesh Log if transaction has problems
-    let runApp (f: UIApplication-> unit)  = 
+    let runApp (f: UIApplication-> unit)  =
         FeshAddin.Instance.RunOnApp (fun (app:UIApplication) ->
             let doc = app.ActiveUIDocument.Document
             use t = new Transaction(doc, "Fesh F# script")
@@ -70,8 +74,8 @@ module ScriptingSyntax =
             try
                 f(app)
             with ex ->
-                match App.Fesh with 
-                |None -> () 
+                match App.Fesh with
+                |None -> ()
                 |Some fesh -> fesh.Log.PrintfnColor 240  0 0 "Function in transaction failed with:\r\n%A" ex
 
             let r = t.Commit()
@@ -87,3 +91,4 @@ module ScriptingSyntax =
                     eprintfn "Transaction.Commit returned: %A" r
             |_ ->   eprintfn "Transaction.Commit returned unknown state: %A" r
             )
+    *)

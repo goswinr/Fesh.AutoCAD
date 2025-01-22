@@ -1,6 +1,6 @@
 namespace Fesh.AutoCAD
 
-open Autodesk.AutoCAD.UI
+open Autodesk
 open System
 open System.Windows
 open Fesh
@@ -33,7 +33,6 @@ module Velo =
                     // https://docs.velopack.io/reference/cs/Velopack/Sources/GithubSource/constructors
                     let readOnlyToken = ""
                     let source = new GithubSource("https://github.com/goswinr/Fesh.AutoCAD", accessToken = readOnlyToken, prerelease = false)
-
                     let exePath = ass.Location.Replace("Fesh.AutoCAD.dll", "Fesh.AutoCAD.Bootstrapper.exe" )
 
                     if IO.File.Exists exePath then
@@ -97,19 +96,19 @@ module Velo =
 
                 with e ->
                     updateManager <- None
-                    fesh.Log.PrintfnInfoMsg "Could not check for Velopack updates:\r\n%A" e
+                    fesh.Log.PrintfnIOErrorMsg $"Could not check for Velopack updates:\r\n{e}"
 
             } |> Async.Start
 
+    type Acad = AutoCAD.ApplicationServices.Application
 
-    let  updateOnAutoCadClose(autoCad:UIApplication, alert: string -> unit) =
-        // This event is raised when the AutoCAD application is just about to be closed.
-        // Event is not cancellable. The 'Cancellable' property of event's argument is always False.
-        // No document may be modified at the time of the event.
-        // The sender object of this event is UIControlledApplication object.
-        autoCad.ApplicationClosing.Add(fun _ ->
+    let updateOnAutoCadClose(alert: string -> unit) =
+
+        // Wraps the AcEditorReactor.quitWillStart() ObjectARX function.
+        // This notification occurs just after the beginQuit() notification if it has not been vetoed and just before shutdown processing begins.
+        Acad.BeginQuit.Add( fun _e ->
             if updatesDownloaded then
-                let autoCadProcesses = System.Diagnostics.Process.GetProcessesByName("AutoCAD")
+                let autoCadProcesses = System.Diagnostics.Process.GetProcessesByName("acad")
                 if autoCadProcesses.Length = 1 then
                     let exe = Reflection.Assembly.GetAssembly(typeof<FeshAutoCadDummy>).Location
                     let exeFolder = IO.Path.GetDirectoryName(exe)
@@ -121,7 +120,11 @@ module Velo =
                             if isNull um.UpdatePendingRestart then
                                 alert "Fesh.AutoCAD updateManager: UpdatePendingRestart is null."
                             else
-                                um.WaitExitThenApplyUpdates(um.UpdatePendingRestart, silent = false, restart = true, restartArgs = null)
+                                um.WaitExitThenApplyUpdates(
+                                    um.UpdatePendingRestart,
+                                    silent = false,
+                                    restart = true, // so that the UI of the Bootstrapper shows
+                                    restartArgs = null)
                         | _ ->
                             alert "Fesh.AutoCAD updateManager or updateInfo not found."
                     else
