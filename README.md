@@ -9,29 +9,29 @@
 ![code size](https://img.shields.io/github/languages/code-size/goswinr/Fesh.AutoCAD.svg)
 [![license](https://img.shields.io/github/license/goswinr/Fesh.AutoCAD)](LICENSE)
 
-Fesh.AutoCAD is an F# scripting editor hosted inside [AutoCAD]("https://www.autodesk.com/products/autoCad/overview"). It is based on [Fesh](https://github.com/goswinr/Fesh).\
-It has semantic syntax highlighting, auto completion, type info tooltips and more.\
+Fesh.AutoCAD is an F# scripting editor hosted inside [AutoCAD]("https://www.autodesk.com/products/autoCad/overview"). It is based on [Fesh](https://github.com/goswinr/Fesh).<br>
+It has semantic syntax highlighting, auto completion, type info tooltips and more.<br>
 The output window supports colored text.
 
 ![Screenshot](Media/screen1.png)
-The example script in the root folder generates the axes for cladding of the Louvre Abu Dhabi.\
+The example script in the root folder generates the axes for cladding of the Louvre Abu Dhabi.<br>
 See also my talk at <a href="https://www.youtube.com/watch?v=ZY-bvZZZZnE" target="_blank">FSharpConf 2016</a>
 
 
 ## How to install
 
 
-Download and run the Setup.exe from [Releases](https://github.com/goswinr/Fesh.AutoCAD/releases).\
-Use the .NET 8 version if you have AutoCAD 2025 or later.\
+Download and run the Setup.exe from [Releases](https://github.com/goswinr/Fesh.AutoCAD/releases).<br>
+Use the .NET 8 version if you have AutoCAD 2025 or later.<br>
 Use the .NET 4.8 version if you have AutoCAD 2024 or earlier.
 
 Fesh.AutoCAD will automatically offer to update itself when a new version is available.
 
 The installer is created with [Velopack](https://velopack.io) and digitally signed.
 
-No admin rights are required to install or run the app.\
-The app will be installed in `\AppData\Local\Fesh.AutoCAD`. \
-Setup will launch the `Fesh.AutoCAD.Bootstrapper.exe`. It will register the `Fesh.AutoCAD.dll` with AutoCAD \
+No admin rights are required to install or run the app.<br>
+The app will be installed in `\AppData\Local\Fesh.AutoCAD`. <br>
+Setup will launch the `Fesh.AutoCAD.Bootstrapper.exe`. It will register the `Fesh.AutoCAD.dll` with AutoCAD <br>
 by creating an `Fesh.AutoCAD.addin` xml file in the AutoCAD Addins folder at `C:/ProgramData/Autodesk/AutoCAD/Addins/20XX/Fesh.AutoCAD.addin`.
 
 
