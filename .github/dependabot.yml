@@ -6,10 +6,14 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7
 
   # Update to newer NuGet dependencies
   - package-ecosystem: "nuget"
     directory: "/"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
 
