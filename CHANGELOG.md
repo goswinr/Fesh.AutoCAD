@@ -11,6 +11,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - First public release based on Fesh.Revit 0.20.0
 
-[Unreleased]: https://github.com/goswinr/Fesh.AutoCAD/compare/0.21.0...HEAD
-[0.21.0]: https://github.com/goswinr/Fesh.AutoCAD/releases/tag/0.21.0
+<!-- [Unreleased]: https://github.com/goswinr/Fesh.AutoCAD/compare/0.21.0...HEAD
+[0.21.0]: https://github.com/goswinr/Fesh.AutoCAD/releases/tag/0.21.0 -->
 
